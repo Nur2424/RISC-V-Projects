@@ -1,1 +1,1028 @@
+# 2.1 [5] <§2.2> (178 page)
+
+# For the following C statement, write the corresponding RISC-V assembly code. 
+# Assume that the C variables f, g, and h, have already been placed in registers x5, x6, and x7 respectively. 
+# Use a minimal number of RISC-V assembly instructions.
+
+#	f = g + (h − 5);
+
+#~ ~ ~ ~ ~ ~ Solution~ ~ ~ ~ ~ ~ ~ ~ ~
+
+# 🔧 Given:
+#	 •	Variables:
+#	   •	f = x5
+#	   •	g = x6
+#	   •	h = x7
+
+addi x7, x7, -5    # Subtract 5 from the value in register x7 (h = h - 5),
+                   # and store the result back into x7.
+                   # Now x7 holds (h - 5).
+
+add  x5, x6, x7    # Add the value in x6 (g) to the new value in x7 (h - 5),
+                   # and store the result into x5 (f).
+                   # Now x5 holds the final result: g + (h - 5).
+                   
+#-------------------------------------------------------------------------------------------------------------------------------
+
+
+#2.2 [5] <§2.2> 
+
+#Write a single C statement that corresponds to the two RISC-V
+#assembly instructions below.
+
+#	add f, g, h
+#	add f, i, f
+
+
+#~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ Solution  ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+
+# Step-by-Step Analysis:
+# 1. First instruction: 
+#   f = g + h  
+#   This computes the sum of "g" and "h" and stores it in "f".
+
+# 2. Second instruction:  
+#   f = i + f  
+#   This takes "i" and adds it to the updated "f" (which is currently "g + h")
+
+# Combined Expression:
+# After both instructions execute, the final value in "f" will be. 
+
+
+#-------------------------------------------------------------------------------------------------------------------------------
+
+
+# 2.3 [5] <§§2.2, 2.3> 
+
+# For the following C statement, write the corresponding RISC-V assembly code. 
+# Assume that the variables f, g, h, i, and j are assigned to registers x5(f), x6(g), x7(h), x28(i), x29(j). 
+# Assume that the base address of the arrays A and B are in
+# registers x10 and x11, respectively.
+
+# B[8] = A[i−j];
+
+
+#~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ Solution ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+
+# 🔧 Given:
+#	 •	Variables:
+#	   •	x5 = f
+#	   •	x6 = g
+#	   •	x7 = h
+#	   •	x28 = i
+#	   •	x29 = j
+#	 •	Arrays:
+#	   	•	x10 = A (base address of array A[])
+#	    •	x11 = B (base address of array B[])
+
+
+sub x30, x28, x29 # , x28(i), x29(j)
+slli x30, x30, 2
+add x30, x30, x10 # x30 + A
+lw x5, 0(x30)
+addi x30, x11, 32 # x11 = B
+sw x5, 0(x30)
+
+#~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ Explanation  ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+
+    # Load i and j into registers (x28 and x29)
+    sub x30, x28, x29        # x30 = i - j
+    # Here, we compute the difference i - j, WHICH GIVES THE INDEX OF THE ELEMENT IN "A".
+
+    # Multiply the result of (i - j) by the size of the array element (assuming 4 bytes for integer)
+    slli x30, x30, 2         # x30 = (i - j) * 4 (offset in bytes)
+    # The result of (i - j) is multiplied by 4 TO ACCOUNT FOR THE SIZE OF THE SIZE OF ONE ELEMENT (assuming 4-byte integers).
+
+    # Add the base address of array A (x10) to get the correct element address
+    add x30, x30, x10        # x30 = address of A[i - j]
+    # We now add the base address of array A (stored in x10) to the byte offset, 
+    # resulting in the address of the element A[i - j].
+
+    # Load the value from array A[i - j] into register x5 (f)
+    lw x5, 0(x30)            # f = A[i - j]
+    # We load the value from the computed address of A[i - j] into register x5 (which corresponds to 'f').
+
+    # Store the value of f into B[8]
+    addi x30, x11, 32        # x30 = address of B[8] (B base address + 8*4 = 32 bytes)
+    # Now, we compute the address of B[8] by adding an offset of 32 bytes to the base address of array B (stored in x11).
+
+    sw x5, 0(x30)            # B[8] = f
+    # Finally, we store the value from register x5 (which holds f = A[i - j]) into the memory address of B[8].
+	# 	•	sw = store a 4-byte value from a register into memory.
+	#	•	Format: sw value, offset(address)
+	# 	•	In your case: sw x5, 0(x30) → store f at address of B[8].
+
+# Summary:
+#	•	The assembly code follows the steps in the C statement B[8] = A[i - j].
+#	•	It computes the index i - j, converts it to a byte offset, calculates the address of A[i - j], 
+#	    loads the value into a register, and stores it in B[8].
+#	•	Each instruction has a clear purpose, such as calculating addresses, loading data, or storing data.
+
+
+#-------------------------------------------------------------------------------------------------------------------------------
+
+#	2.4 [10] <§§2.2, 2.3> 
+# For the RISC-V assembly instructions below, what is the corresponding Final corresponding C code would be? 
+
+# Assume that the variables f, g, h, i, and j are assigned to registers x5, x6, x7, x28, and x29, respectively. 
+# Assume that the base address of the arrays A and B are in registers x10 and x11, respectively.
+
+slli x30, x5, 3	# x30 = f*8
+add x30, x10, x30	# x30 = &A[f]
+slli x31, x6, 3	# x31 = g*8
+add x31, x11, x31	# x31 = &B[g]
+lw x5, 0(x30)	# f = A[f]
+addi x12, x30, 8
+lw x30, 0(x12)
+add x30, x30, x5
+lw x30, 0(x31)
+
+# 🔧 Given:
+#	 •	Variables:
+#	   •	x5 = f
+#	   •	x6 = g
+#	   •	x7 = h
+#	   •	x28 = i
+#	   •	x29 = j
+#	 •	Arrays:
+#	   	•	x10 = A (base address of array A[])
+#	    •	x11 = B (base address of array B[])
+
+#~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ Solution  ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+
+# ✅ Pure C Equivalent:
+
+#	f = A[f];                     // Load the value at A[f] into variable f      
+#								  // “Look inside A at position f, take that value, and now that becomes the new f.”
+
+#	int temp = A[f + 1];          // Load the value at A[f + 1] into a temporary variable	
+#								  // Now that f has a new value (from A[f]), this line accesses the next element: A[f + 1].     		
+
+#	int result = temp + f;        // Add A[f + 1] + A[f] and store in result (but not used) 
+#	result = B[g];                // Overwrite result with B[g]
+
+#~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ Explanation  ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+
+
+# Assumptions:
+# x5  = f       (integer variable f)
+# x6  = g       (integer variable g)
+# x10 = A       (base address of array A)
+# x11 = B       (base address of array B)
+
+
+# Step 1: Compute byte offset for A[f]
+# Each element in A is 8 bytes (e.g., long or double),
+# so we multiply f by 8 to get the correct byte address.
+slli x30, x5, 3        # x30 = f * 8  (shift left by 3 bits = *8)
+
+# Step 2: Compute the address of A[f]
+add x30, x10, x30      # x30 = A + (f * 8) → address of A[f]
+
+# Step 3: Compute byte offset for B[g]
+# Again, assuming 8-byte elements in array B.
+slli x31, x6, 3        # x31 = g * 8
+
+# Step 4: Compute the address of B[g]
+add x31, x11, x31      # x31 = B + (g * 8) → address of B[g]
+
+# Step 5: Load value at A[f] (4 bytes) into register x5
+# This loads only 4 bytes (word) even though elements are 8 bytes.
+# Possibly only working with lower 32 bits or this is intentional in the exercise.
+lw x5, 0(x30)          # f = A[f] (load word from address in x30 into x5)
+
+# Step 6: Compute address of A[f + 1]
+# Since each element is 8 bytes, add 8 to get to A[f+1]
+addi x12, x30, 8       # x12 = address of A[f + 1]
+
+# Step 7: Load value at A[f + 1]
+lw x30, 0(x12)         # x30 = A[f + 1] (load word from A[f + 1])
+
+# Step 8: Add values A[f] and A[f+1]
+# f is now stored in x5, A[f+1] is in x30
+add x30, x30, x5       # x30 = A[f + 1] + A[f]
+
+# Step 9: Load value from B[g], overwriting x30
+# Final result replaces previous sum with value from B[g]
+lw x30, 0(x31)         # x30 = B[g]
+
+
+
+#-------------------------------------------------------------------------------------------------------------------------------
+
+
+
+#	2.7 [5] <§§2.2, 2.3> 
+# Translate the following C code to RISC-V. 
+
+# Assume that the
+# variables f, g, h, i, and j are assigned to registers x5, x6, x7, x28, and x29,respectively. 
+# Assume that the base address of the arrays A and B are in registers x10 and x11, respectively. 
+# Assume that the elements of the arrays A and B are 8-byte words.
+
+# B[8] = A[i] + A[j];
+
+
+#~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ Solution  ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+
+# 🔧 Given:
+#	 •	Variables:
+#	   •	i = x28
+#	   •	j = x29
+#	•	Arrays:
+#	   •	A[] base address in x10
+#	   •	B[] base address in x11
+#	   •	Elements are 8 bytes each (use ld and sd)
+#	•	Result goes to B[8]
+
+# 1. Calculate address of A[i]
+slli x12, x28, 3       # x12 = i * 8 (since elements are 8 bytes)     So, slli x30, x28, 3 means:
+#																		   Take i (from x28), multiply it by 8, and store the result in x30.
+add x12, x10, x12      # x12 = address of A[i]
+
+# Load A[i] into register x13
+ld x13, 0(x12)         # x13 = A[i]
+
+# 2. Calculate address of A[j]
+slli x14, x29, 3       # x14 = j * 8
+add x14, x10, x14      # x14 = address of A[j]
+
+# Load A[j]
+ld x15, 0(x14)         # x15 = A[j]
+
+# 3. Add A[i] + A[j]
+add x16, x13, x15      # x16 = A[i] + A[j]
+
+# 4. Store result to B[8]
+li x17, 8              # x17 = 8
+slli x17, x17, 3       # x17 = 8 * 8 = 64 (offset for B[8])
+add x17, x11, x17      # x17 = address of B[8]
+sd x16, 0(x17)         # store result in B[8]
+
+
+
+#-------------------------------------------------------------------------------------------------------------------------------
+
+
+#	2.8 [10] <§§2.2, 2.3> 
+
+# Translate the following RISC-V code to C. 
+# Assume that thevariables f, g, h, i, and j are assigned to registers x5, x6, x7, x28, and x29, respectively. 
+# Assume that the base address of the arrays A and B are in registers x10 and x11, respectively.
+
+addi x30, x10, 8
+addi x31, x10, 0
+sw x31, 0(x30)
+lw x30, 0(x30)
+add x5, x30, x31
+
+# 🔧 Given:
+#	 •	Variables:
+#	   •	x5 = f
+#	   •	x6 = g
+#	   •	x7 = h
+#	   •	x28 = i
+#	   •	x29 = j
+#	 •	Arrays:
+#	   	•	x10 = A (base address of array A[])
+#	    •	x11 = B (base address of array B[])	
+
+#Also assume arrays store 4-byte (32-bit) values (since sw and lw are used)
+
+
+
+#~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ Solution  ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+
+
+
+addi x30, x10, 8       # x30 = A + 8        → pointer to A[2] (since 8/4 = 2)
+addi x31, x10, 0       # x31 = A            → pointer to A[0]
+sw x31, 0(x30)         # store A into A[2]  → A[2] = A
+lw x30, 0(x30)         # x30 = A[2]         → load A[2] into x30 (which holds A)
+add x5, x30, x31       # f = x30 + x31      → f = A + A
+
+
+
+# A[2] = (int)A;        // store address of A as an int into A[2]
+# f = A[2] + (int)A;    // f = value of A[2] + A (both are treated as int)
+
+# 📌 Summary:
+
+#	•	This is a low-level operation treating addresses as integers.
+#	•	It’s more common in systems programming or when implementing pointer tricks.
+#	•	The code essentially stores the address of A (pointer) into a memory slot and adds it to itself.
+
+
+
+#-------------------------------------------------------------------------------------------------------------------------------
+
+
+
+#	2.9 [20] <§§2.2, 2.5> 
+
+# For each RISC-V instruction in Exercise 2.8, 
+
+# Show the valueof the opcode (op), source register (rs1), and destination register (rd) fields. 
+# For the I-type instructions, show the value of the immediate field, and for the R-type instructions, 
+# show the value of the second source register (rs2). 
+
+# For non U- and UJ-type instructions, show the funct3 field, and for R-type and S-type instructions, also show the funct7 field.
+
+# 🏁 Breakdown of Each Instruction
+
+addi x30, x10, 8
+
+# This is an I-type instruction (immediate-type). The addi instruction performs addition between the immediate value and a register.
+#	•	Opcode: addi has an opcode of 0010011.
+#	•	rs1: Register x10 (base address of array A).
+#	•	rd: Register x30 (result).
+#	•	Immediate: 8 (the immediate value added to x10).
+#	•	funct3: 000 (for addi).
+#	•	funct7: Not relevant for I-type instructions.
+
+# So, the breakdown for addi would be:
+#	•	Opcode (op): 0010011
+#	•	rs1: x10 (base address of A).
+#	•	rs2: N/A (not applicable for I-type instructions).
+#	•	rd: x30.
+#	•	Immediate: 8.
+#	•	funct3: 000.
+#	•	funct7: N/A.
+
+⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻
+
+addi x31, x10, 0
+
+# This is also an I-type instruction (immediate-type).
+#	•	Opcode: addi has an opcode of 0010011.
+#	•	rs1: Register x10 (base address of array A).
+#	•	rd: Register x31 (result).
+#	•	Immediate: 0 (the immediate value added to x10).
+#	•	funct3: 000 (for addi).
+#	•	funct7: Not relevant for I-type instructions.
+
+# So, the breakdown for this addi instruction would be:
+#	•	Opcode (op): 0010011
+#	•	rs1: x10 (base address of A).
+#	•	rs2: N/A (not applicable for I-type instructions).
+#	•	rd: x31.
+#	•	Immediate: 0.
+#	•	funct3: 000.
+#	•	funct7: N/A.
+
+⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻
+
+sw x31, 0(x30)
+
+# This is an S-type instruction (store-type).
+#	•	Opcode: sw has an opcode of 0100011.
+#	•	rs1: Register x30 (address where data will be stored).
+#	•	rs2: Register x31 (data to be stored).
+#	•	Immediate: 0 (the offset from x30 where the data will be stored).
+#	•	funct3: 010 (for sw).
+#	•	funct7: Not relevant for S-type instructions.
+
+# So, the breakdown for sw would be:
+#	•	Opcode (op): 0100011
+#	•	rs1: x30.
+#	•	rs2: x31.
+#	•	rd: N/A (not applicable for store-type instructions).
+#	•	Immediate: 0 (store at x30 with no offset).
+#	•	funct3: 010.
+#	•	funct7: N/A.
+
+⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻
+
+lw x30, 0(x30)
+
+# This is an I-type instruction (load-type).
+#	•	Opcode: lw has an opcode of 0000011.
+#	•	rs1: Register x30 (base address from where data will be loaded).
+#	•	rd: Register x30 (destination where the data will be stored).
+#	•	Immediate: 0 (the offset from x30 where the data is loaded from).
+#	•	funct3: 010 (for lw).
+#	•	funct7: Not relevant for I-type instructions.
+
+#So, the breakdown for lw would be:
+#	•	Opcode (op): 0000011
+#	•	rs1: x30.
+#	•	rs2: N/A (not applicable for I-type instructions).
+#	•	rd: x30.
+#	•	Immediate: 0 (load from the address in x30 with no offset).
+#	•	funct3: 010.
+#	•	funct7: N/A.
+
+⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻
+add x5, x30, x31
+
+# This is an R-type instruction (register-type).
+#	•	Opcode: add has an opcode of 0110011.
+#	•	rs1: Register x30 (first operand).
+#	•	rs2: Register x31 (second operand).
+#	•	rd: Register x5 (result).
+#	•	funct3: 000 (for add).
+#	•	funct7: 0000000 (for add).
+
+# So, the breakdown for add would be:
+#	•	Opcode (op): 0110011
+#	•	rs1: x30.
+#	•	rs2: x31.
+#	•	rd: x5.
+#	•	Immediate: N/A (not applicable for R-type instructions).
+#	•	funct3: 000.
+#	•	funct7: 0000000.
+
+⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻
+
+# +----------------------+----------+------+-------+------+-----------+--------+---------+
+#|     Instruction      | Opcode   | rs1  | rs2   | rd   | Immediate | funct3 | funct7  |
+# +----------------------+----------+------+-------+------+-----------+--------+---------+
+# | addi x30, x10, 8     | 0010011  | x10  | N/A   | x30  | 8         | 000    | N/A     |
+# | addi x31, x10, 0     | 0010011  | x10  | N/A   | x31  | 0         | 000    | N/A     |
+# | sw x31, 0(x30)       | 0100011  | x30  | x31   | N/A  | 0         | 010    | N/A     |
+# | lw x30, 0(x30)       | 0000011  | x30  | N/A   | x30  | 0         | 010    | N/A     |
+# | add x5, x30, x31     | 0110011  | x30  | x31   | x5   | N/A       | 000    | 0000000 |
+# +----------------------+----------+------+-------+------+-----------+--------+---------+
+
+
+
+
+#-------------------------------------------------------------------------------------------------------------------------------
+
+
+
+#	[ 2.10.1 (5) <82.4> 
+# What is the value of x30 for the following assembly code?! 
+
+# 	•	x5 = 0x8000000000000000
+#	•	x6 = 0xD000000000000000
+
+add x30 x5 x6
+
+
+
+#~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ Solution  ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+
+#	⚠️ Task 1: x30 = x5 + x6
+
+#  					= 0x8000000000000000 + 0xD000000000000000 = 0x15000000000000000
+
+
+#	⚠️ Task 2: Did overflow occur?
+
+#	Yes, unsigned overflow occurred. Here’s why:
+#		•	The true result of the addition is 0x15000000000000000 — a 65-bit value.
+#		•	A 64-bit register can’t hold more than 0xFFFFFFFFFFFFFFFF, so the top bit is lost.
+
+#	For signed interpretation, both x5 and x6 are negative (their MSB is 1), and their sum should be more negative, 
+#	but the result (0x5000000000000000) is positive, so signed overflow has occurred too.
+
+#-------------------------------------------------------------------------------------------------------------------------------
+
+# 2.17 
+
+# Assume the following register contents:
+
+#	X5 = 0X00000000AAAAAAAA 
+#	X6=0x1234567812345678
+
+
+#~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ Tasks  ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+
+
+#	⚠️ Task 2.17.1	What is the value of x7 for the following sequence of instructions?
+
+slli x7, x5, 4
+or x7, x7, x6
+
+# Given:
+# x5 = 0x00000000AAAAAAAA
+# x6 = 0x1234567812345678
+
+# Instruction 1: Shift x5 left by 4 bits
+slli x7, x5, 4
+# x5 << 4 = 0x0000000AAAAAAAA0
+
+# Instruction 2: Bitwise OR with x6
+or x7, x7, x6
+# 0x0000000AAAAAAAA0 | 0x1234567812345678 = 0x1234567ABAFE5678
+
+# Final result:
+# x7 = 0x1234567ABAFE5678
+
+
+#	⚠️ Task 2.17.2	For the register values shown above, what is the value of x7 for the following sequence of instructions?
+
+slli x7, x6, 4
+
+# Given:
+# x6 = 0x1234567812345678
+
+# Instruction: Shift x6 left by 4 bits
+slli x7, x6, 4
+# x6 << 4 = 0x2345678123456780
+
+# Final result:
+# x7 = 0x2345678123456780
+
+
+#	⚠️ Task 2.17.3	For the register values shown above, what is the value of x7 for the following sequence of instructions?
+
+srli x7, x5, 3
+andi x7, x7, OXFEF
+
+
+# # Given:
+# x5 = 0xAAAAAAAA
+
+# Step 1: Convert 0xAAAAAAAA to binary
+# 0xA = 1010
+# So, 0xAAAAAAAA in binary is:
+# 0xAAAAAAAA = 10101010 10101010 10101010 10101010 (32 bits)
+
+# Step 2: Perform a logical right shift by 3 bits 
+		srli x7, x5, 3
+        
+# Shift right by 3: 
+# 10101010 10101010 10101010 10101010 >> 3 bits becomes:
+# 00010101 01010101 01010101 01010101 (Binary result)
+
+# Step 3: Convert the result back to hexadecimal:
+# 00010101 01010101 01010101 01010101 = 0x15555555
+
+# Final result after shifting:
+# x7 = 0x15555555
+
+andi x7, x7, OXFEF
+
+## Given:
+# x7 = 0x15555555 (result from previous step)
+# AND operation with 0xFEF
+
+# Step 1: Convert x7 = 0x15555555 to binary
+# 0x15555555 in binary:
+# 0x1 = 0001
+# 0x5 = 0101
+# So, 0x15555555 in binary is:
+# 0x15555555 = 00010101 01010101 01010101 01010101 (32 bits)
+
+# Step 2: Convert 0xFEF to binary
+# 0xF = 1111
+# 0xE = 1110
+# 0xF = 1111
+# So, 0xFEF in binary is:
+# 0xFEF = 1111 1110 1111 (12 bits)
+
+# Step 3: Perform the AND operation (bitwise AND) between x7 and 0xFEF
+# Note: We can align the 0xFEF to the lower 12 bits of x7 (fill with leading 0s)
+
+# Align 0xFEF to the lower 12 bits of x7:
+# x7 = 00010101 01010101 01010101 01010101
+# 0xFEF = 00000000 00000000 00001111 11110111 (12 bits)
+
+# Perform the bitwise AND:
+# 00010101 01010101 01010101 01010101  (x7)
+# AND
+# 00000000 00000000 00001111 11110111  (0xFEF aligned)
+# -------------------------------------------
+# 00000000 00000000 00000101 01000101  (Result in binary)
+
+# Step 4: Convert the result back to hexadecimal:
+# 00000000 00000000 00000101 01000101 = 0x00000545
+
+# Final result after AND operation:
+# x7 = 0x00000545
+
+
+#-------------------------------------------------------------------------------------------------------------------------------
+
+#	2.21 [5] <$2.7> 
+
+# Assume x5 holds the value 0x00000000001010000. What is the value of x6 after the following instructions?
+
+#  		 bge x5, x0, ELSE 
+#  		 jal xO, DONE
+#  ELSE: ori х6, х0, 2
+#  DONE:
+
+
+# Initial: x5 = 0x00000000001010000 (positive), x0 = 0
+
+# bge x5, x0, ELSE  // Branch to ELSE if x5 ≥ x0 (true, since 0x00000000001010000 ≥ 0)
+# jal x0, DONE     // Skipped because branch was taken
+# ELSE: ori x6, x0, 2  // x6 ← (x0 OR 2) = (0 OR 2) = 2
+# DONE:
+
+# Final value of x6: 2
+
+
+
+
+#---------------------------------------HB-LECTURES------------------------------------------------
+
+
+
+# Write RISC-V instructions to perform the following operations.
+# HOW many insractions do you need for each multiplications
+# 1.	s1 = s0 * 4
+slli s1, s0, 2
+
+# 2.	s1 = s0 * 128
+slli s1, s0, 7
+
+#3.		s1 = s0 * 9  (9 = 2^3 + 2^0)
+
+slli t0, s0, 3
+slli t1, s0, 1
+add s1, t1, t0 
+
+#4.		s1 = s0 * 7 (7 = 8 - 1) 
+
+slli s1, s0, 3
+add s1, s0, s0
+
+#-------------------------------------------------------------------------------------------------------
+
+# LOADING LARGE CONSTANTS WITH LUI 
+
+# 1) g = 10
+
+addi x8, x0, 10
+
+# We are good at 12-bit immediate most of the time, but sometimes need larger numbers
+# How do we load a 32-bit  constant in a register? 
+
+# Example -> 0x12345678 which is in HEX and 32 bit 
+
+# To do that i we another insruction called 
+
+# LUI (Load upper immediate) 
+
+
+
+# LUI rd, immd
+
+# LUI allows 20-bit immediate
+#	Assembler supports %hiC) to get the higher 20 bits of C
+# The 20 bits are placed into bits 12 to bits 31
+#	Lower 12 bits are cleared
+
+# Task (1) load 0x12345678 into reister x18
+
+lui x18, 0x12345
+addi x18, 0x678 
+
+# if write addi and then lui,lui wil clean them write 0x12345
+
+
+#-------------------------------------------------------------------------------------------------------
+
+# LUI ACTIVITY AND SOLUTION 
+
+# Write the instruction to load 0x789ABCDE into register x18, so the values should
+# appear in x18 register like below:
+
+# 0111 1000 1001 1010 1011 1100 1101 1110
+
+lui x18, 0x789AC 
+addi x18, x18, 0xCDE  #sign extended!
+
+#-------------------------------------------------------------------------------------------------------
+
+# IMPORTANT INFO ABOUT MEMORY 
+
+# Memory in just a large, single-dimension array of the bytes
+
+# ° 1 Byte = 8 bis; 1 Word = 4 bytes = 32 bits 
+# ° Most architectures address indivial bytes in memory 
+# ° Thus, the memory address of the word must be a multiple of 4
+# ° 1 word = 32 bits 
+# ° Visual representaion of the memory throughout the course will be like stack
+
+#-------------------------------------------------------------------------------------------------------
+
+# DEALING WITH MEMORY OPERANDS
+
+# Main memory used for composite data 
+	# ° Array, structure, etc
+    # ° Arithmetic operations occur only on registers 
+     
+# To apply arithmetic operations on memory contents (data transfer instructions)
+	# ° Load values from memory into registers 
+    # ° Store result from register to memory 
+    
+# Memory is byte addressed 
+	# ° Each address identifies an 8-bit byte 
+
+# A 32-bit address space supports 5 GiB
+	# ° a 64-bit address space suppors  16 GiB (exbibytes)
+    
+    
+# ⚠️ For Example: you want get 6 from the Array A = [2,3,6,10,15] -> you do A[2] -> And u will get 6
+	# Here A is base address
+    # 2 is offset 
+    
+# look for the photo Снимок экрана 2025-05-05 в 17.46.11 2
+
+
+#------------------------------------------------------------------------------
+
+#	Memory Operands Example
+ 
+# Format of Load and Store instuctions 
+
+# ° LOAD A WORD FROM MEMORY INTO DESTINATION REGISTER 	 
+#	° LOAD: lw R1, Offset(R2)                 [ R -> Destination Register, Offset -> is the constant value,
+#		° REG[R1] = Mem[Reg[R2]+ Offset]		        # R2 -> base address where u wanna first jump into the memory ]
+#		 -> Load the contents from memory address R2 + Offset into register R1
+
+# ° STORE A WORD FROM REGISTER TO MEMORY 
+#	° STORE: sw R3, Offset (R2)
+#		° Mem[Reg[R2] + Offset] = Reg [R3]
+#		-> Store the contents of register R3 to memory address R2 + Offset
+
+#			EFFECTIVE ADDRESS: Offset + base address in register ⚠️ 
+#			Offset -> is a constant value.Not a register 
+
+# EXAMPLE 
+
+# C CODE:
+# g = h + A[7];
+#	° g -> x20, h -> x21, A -> x 22
+
+# COMPILED RISC-V CODE:
+
+lw x9,7(x22)
+add x20,x21,x9
+
+# INDEX 7 REGUIRES THE OFFSET OF 28  ⚠️
+#	4 BYTES PER WORD
+
+# THEREFORE -> 
+
+lw x9,28(x22)
+add x20, x21, x9 
+
+
+#------------------------------------------------------------------------------
+
+# MEMORY ACCESS ACTIVITY AND SOLUTION 
+
+# 	C CODE : A[13] = h + A[3]
+
+#	where, 
+#		° h is in x21
+#		° Base address of A in x22
+#		° Save the value of A[3] in reg.x9
+#		° Store addition in reg.x18 
+
+#	WRITE ASSEMBLY CODE 
+
+#~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~~ Solution  ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+
+lw x9, 12(x22)
+add x18, x21, x9
+sw x18, 52(x22)
+
+#------------------------------------------------------------------------------
+
+# ARRAY INDEXING IN MEMORY 
+
+# WHAT IF THE INDEX IS A LARGE CONSTANT? (A[1050]) 
+# WHAT IF THE INDEX IS A VARIABLE? (A[i])
+
+# WE HAVE TO CALUCALE THE ADDRESS WITH HELF OF INSRUCTIONS
+
+# GIVEN AN INDEX,WE COMPUTE THE ADDRESS OF THE ELEMENT BY: 
+#	° Multiplying index by ELEMENT SIZE to get OFFSET 
+#	° Adding OFFSET to the base address 
+
+
+# CALCULATE THE ADDRESS OF A[1024]
+
+addi t0, x0, 1024
+slli t0, t0, 2			# 1024 * 4 -> addr of A[1024]
+add t0, t0, s1			# Assume Base address of A in s1
+
+# use t0 in load/store insructions 
+
+
+# CALCULATE ADDRESS OF A[i], where i is in register s2 
+
+slli t0, s2, 2		# i * 4
+add t0, t0, s1		# Effective Addr of A[i] in t0 
+
+# use t0 in load/store insructions
+
+lw s2, t0(s1) # is wrong! ❌
+lw s2, 0(t0) # is correct! ✅
+
+
+#------------------------------------------------------------------------------
+
+# COPYING ONE ARRAY TO ANITHER ARRAY,ACTIVITY
+
+# C CODE FOR COPYING ARRAY IS GIVEN BELOW: 
+
+# for (i = 0; i < 100; i++)
+# 	B[i] = A [i];
+
+#  RISC-V code 
+
+
+
+# Register Usage:
+# --------------------------------
+# | Variable      | Register     |
+# --------------------------------
+# | i             | s1          |
+# | A's address   | s2          |
+# | B's address   | s3          |
+# | Initial value | s4 (100)    |
+# -------------------------------- 
+
+
+addi s4, x0, 100
+addi s1, x0, 0
+# beq x0, x0, test  # we know initially s1 < s4
+
+loop:
+	  slli t0, s1, 2		# t0 = i * 4
+	  add t2, t0, s2		# compute address of A[i]
+	  lw t1, 0(t2)		
+	  add t3, t0, s3		# compute address of B[i]
+	  sw t1, 0(t3)
+	  addi s1, s2, 1 		# incrementing i
+test: bne s1, s4, loop      # test loop condition 
+
+
+
+#------------------------------------------------------------------------------
+
+# BYTE ORDER, BIG AND LITTILE EDNIAN FORMAT 
+
+# ENDIANNES 
+
+# X1 IS 0X01020304
+# sw x1, 0x100(X0)
+
+# BIG-ENDIAN: THE HIGHIEST BYTE GOES TO THE SLOWEST MEMORY ADDRESS 
+
+# Memory Layout:
+# --------------------------------
+# | Address        | Value      |
+# --------------------------------
+# | 0x0000 0103    | 0x04      |
+# | 0x0000 0102    | 0x03      |
+# | 0x0000 0101    | 0x02      |
+# | 0x0000 0100    | 0x01      |
+# --------------------------------
+
+# LITTLE-ENDIAN: THE LOWEST BYTE GOES TO THE LOWEST MEMORY ADDRESS  (RISC-V USES THIS TYPE)
+
+# Memory Layout (Little-Endian Example):
+# --------------------------------
+# | Address        | Value      |
+# --------------------------------
+# | 0x0000 0103    | 0x01      |
+# | 0x0000 0102    | 0x02      |
+# | 0x0000 0101    | 0x03      |
+# | 0x0000 0100    | 0x04      |
+# --------------------------------
+
+# - - - - - - - - - - - - EXAMPLE - - - - - - - - - - - - 
+
+# 354F
+
+# --------------------------------
+# | Address   | Value   | Label  |
+# --------------------------------
+# | 0x1000    | 0x3S    | B: E   |
+# | 0x1001    | 0x4F    | L: E   |
+# --------------------------------
+
+# - - - - - - - - - - - - EXAMPLE - - - - - - - - - - - - 
+
+# WHAT ARE THE BITS IN T0 AFTER EXECUTING THE FOLLOWING RISC-V INSTRUCTION? 
+
+lw t0, 0x200(x0)
+
+# --------------------------------
+# | Address        | Value      |
+# --------------------------------
+# | 0x0000 0203    | 0x32      |z
+# | 0x0000 0202    | 0x65      |
+# | 0x0000 0201    | 0x81      |
+# | 0x0000 0200    | 0xAC      |
+# --------------------------------
+
+# ANSWER IS: 0x326581AC
+
+
+#------------------------------------------------------------------------------
+
+# TRANSFERING DATA OF OTHER SIZE
+
+# ° RISC-V SUPPPORTS DATA OF OTHER SIZES
+#	° EACH TYPE CAN BE SIGNED OR UNSIGNED 
+
+# RISC-V Data Types and Memory Operations
+# ====================================================
+# Data Type Reference:
+# ----------------------------------------------------
+# | Size (bits) | Name       | C Type        |
+# ----------------------------------------------------
+# | 8           | byte       | char          |
+# | 16          | half word  | short int     |
+# | 32          | word       | int, long int |
+# ----------------------------------------------------
+#
+# Load/Store Instructions:
+# ----------------------------------------------------
+# Load Signed (sign-extended):
+#   lb  rd, offset(rs1)    # Load byte (8b → 32b sign-ext)
+#   lh  rd, offset(rs1)    # Load halfword (16b → 32b sign-ext)
+#
+# Load Unsigned (zero-extended):
+#   lbu rd, offset(rs1)    # Load byte unsigned (8b → 32b 0-ext)
+#   lhu rd, offset(rs1)    # Load halfword unsigned (16b → 32b 0-ext)
+#
+# Store (lowest bits only):
+#   sb  rs2, offset(rs1)   # Store byte (32b → 8b truncate)
+#   sh  rs2, offset(rs1)   # Store halfword (32b → 16b truncate)
+#
+# Notes:
+# - All offsets are 12-bit signed immediates (-2048 to 2047)
+# - 'long int' is 32b in RV32, 64b in RV64
+# ====================================================  
+
+
+# DATA TRANSFER 
+
+# | Instruction Type        | Assembly Format   |       Pseudocode       |       Description                          |
+# | Load word               | 1w x5, 40(x6)     | x5 = Memory[x6 + 40]   | Word from memory to register          |
+# | Store word              | sw x3, 40(x6)     | Memory[x6 + 40] = x5   | Word from register to memory          |
+# | Load halfword           | 1h x5, 40(x6)     | x5 = Memory[x6 + 40]   | Halfword from memory to register      |
+# | Load halfword, unsigned | 1hu x5, 40(x6)    | x5 = Memory[x6 + 40]   | Unsigned halfword to register         |
+# | Store halfword          | sh x5, 40(x6)     | Memory[x6 + 40] = x5   | Halfword to memory                    |
+# | Load byte               | 1b x5, 40(x6)     | x5 = Memory[x6 + 40]   | Byte to register (sign-extended)      |
+# | Load byte, unsigned     | 1bu x5, 40(x6)    | x5 = Memory[x6 + 40]   | Byte to register (zero-extended)      |
+# | Store byte              |  sb x5, 40(x6)    | Memory[x6 + 40] = x5   | Byte to memory                        |
+# | Load reserved           | lr.d x5, (x6)     | x5 = Memory[x6]        | Atomic load (for RVA extension)       |
+# | Store conditional       | sc.d x7, x5, (x6) | Memory[x6] = x5; x7=0/1| Atomic store (sets success/fail flag) |
+# | Load upper immediate    | lui x5, 0x12345   | x5 = 0x12345000        | Load 20-bit constant << 12 bits       |
+ 
+
+
+# DATA TRANSFER INSRUCTIONS 
+
+# ° LB or LBU insruction loads a byte from memory to a register 
+#		° LB: the byte is sign extended to a word 
+#		° LBU: the byte is zero extended to a word   
+
+# ° SB insruction stores a byte in a register to a memory 
+#		° Only the lowest 8 bit of the register are stored
+
+# REGISTEER     MEMORY
+#        <------- LB LBU
+#     SB  --------> 
+
+# - - - - - - - - - - - - EXAMPLE - - - - - - - - - - - - 
+
+
+# WHAT IS THE VALUE IN T0 AFTER EXECUTING THE FOLLOWING RISC-V INSRUCTIONS ? 
+
+lb t0, 0x201(x0)
+ 
+# --------------------------------
+# | Memory Address | Value      |
+# --------------------------------
+# | 0x0000 0203    | 0x32       |
+# | 0x0000 0202    | 0x65       |
+# | 0x0000 0201    | 0x81       |
+# | 0x0000 0200    | 0xAC       |
+# --------------------------------
+
+# Answer : 0xFFFF FF81
+
+
+
+# - - - - - - - - - - - - EXAMPLE - - - - - - - - - - - - 
+
+# WHAT IS THE VALUE IN T0 AFTER EXECUTING THE FOLLOWING RISC-V INSRUCTIONS ? 
+
+lh t0, 0x200(x0)
+
+
+# --------------------------------
+# | Memory Address | Value      |
+# --------------------------------
+# | 0x0000 0203    | 0x32       |
+# | 0x0000 0202    | 0x65       |
+# | 0x0000 0201    | 0x81       |
+# | 0x0000 0200    | 0xAC       |
+# --------------------------------
+
+# Answer : FFFF 81AC
+
 
