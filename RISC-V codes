@@ -1026,3 +1026,163 @@ lh t0, 0x200(x0)
 # Answer : FFFF 81AC
 
 
+#----------------------------------------------------------------------------------------------------
+
+
+# DEALING WITH BYTE ARRAYS
+
+
+# If S is a byte array, how do we calculate the address of S[i]?
+
+# Assume the base address of S is in S1 and i is in S2
+# We would like to save the address of S[i] in t0
+
+
+# - - - - - - - - - - - - EXAMPLE - - - - - - - - - - - - 
+
+# Copy string S to D
+
+
+# C code
+
+char c;
+int i = 0;
+
+do {
+    c = s[i];
+    d[i] = c;
+    i += 1;
+} while (c);
+
+# This is a typical string copy loop — it copies characters from one memory location to another 
+#     until it hits the null terminator ('\0'), which marks the end of the string.
+
+
+
+
+
+
+
+# RISC V code
+
+
+Register Mapping (what we assume):
+	•	a1 → holds the address of the source string s ✅
+	•	a0 → holds the address of the destination string d ✅
+	•	t0 → used as a temporary register to hold c (i.e., the character we just copied) ✅
+
+
+    li t1, 0              # We need a variable for 'i' (the index). RISC-V doesn't have named variables,
+                          # so we use register t1 for 'i' and set it to 0 (i = 0).
+
+loop:
+    add t2, a1, t1        # We compute the address of s[i] by adding i (t1) to the base address of s (a1).
+                          # Remember, in RISC-V, we can't use array-style access like s[i],
+                          # so we compute the actual memory address manually.
+
+    lbu t3, 0(t2)         # Load the byte at address s[i] into t3.
+                          # We use lbu (load byte unsigned) to load a single character (1 byte).
+                          # This corresponds to: c = s[i];
+
+    add t2, a0, t1        # Now compute the address of d[i] by adding i (t1) to the base address of d (a0).
+
+    sb t3, 0(t2)          # Store the byte from t3 (which is c) into d[i].
+                          # This is equivalent to: d[i] = c;
+
+    mv t0, t3             # Copy the value of c into t0.
+                          # We'll use t0 to check whether the loop should continue.
+                          # (Technically, this isn't strictly necessary since we could use t3 directly,
+                          # but it's done here for clarity and matches your C code: `c = s[i];`.)
+
+    addi t1, t1, 1        # i = i + 1;
+                          # Increment the index to move to the next character in the next iteration.
+
+    bnez t0, loop         # If c != 0, go back to the start of the loop.
+                          # This means: if we haven’t reached the end of the string (null terminator),
+                          # keep copying the next character.
+
+
+
+
+#----------------------------------------------------------------------------------------------------
+
+# FUNCTIONS IN RISC V 
+
+° AS WE KNOW,REGISTERS ARE FASTEST PLACE TO HOLD DATA IN A COMPUTER
+
+° Registers are reserved for funstion calling 
+   ° x10 - x17: for parameter/return values
+   ° x1: for holding return address
+
+
+############################################################
+# RISC-V Register Usage for Function Arguments / Results   #
+# -------------------------------------------------------- #
+# x10 (a0) : 1st argument / return value                   #
+# x11 (a1) : 2nd argument                                  #
+# x12 (a2) : 3rd argument                                  #
+# x13 (a3) : 4th argument                                  #
+# x14 (a4) : 5th argument                                  #
+# x15 (a5) : 6th argument                                  #
+# x16 (a6) : 7th argument                                  #
+# x17 (a7) : 8th argument                                  #
+#                                                          #
+# a0–a7 are used to pass parameters into functions         #
+# and to return values from them  			   #
+
+# Register to hold the address of the next insruction RETURN ADDRESS X1 # 
+
+############################################################
+
+
+Jump-and-Link Instruction 
+
+jal rd, function_name   <-------- Function name is just a label,indicating a memory address
+
+° jump and link (JAL) for procedure call
+	° GO to the label (where the procedure/function starts)
+	° And save the address of the following instruction (PC+4) in rd 
+
+° rd can be any register 
+	° Save return address in x1(or ra) for function calls
+
+° J is a pseudoinstruction for jupm
+	° It is a JAL instruction that writes to x0
+	° There is no separate jump instruction in RISC V
+
+° Now the return address is in a register, e.g., ra or x1. How actually go there? 
+	° JAL does not take a sourse register
+
+° We need another insruction that can jump to the address in a register "JALR" (to comeback from the function execution )
+
+
+° To return from the function 
+
+jalr rd, offset(rs1)
+jalr x0, 0(x1)
+
+° Procedure call or return: jump and link to address in a register 
+	° Go to the address computed as Reg[rs1] + offset 
+	° Saves the address of the following insruction (PC + 4) in rd 
+
+° The return address is saved in rd
+	° If the ruturn address is not needed, use x0 ad rd
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
