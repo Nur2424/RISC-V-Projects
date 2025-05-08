@@ -1428,10 +1428,56 @@ addi sp, sp, 4
 
 # SPLLING DATA INTO MEMORY - ACTIVITY
 
-# C CODE
+# C CODE 
+
+int leaf_example (int g, int h, int i, int j )
+{
+	int f;
+	f = （ g + h ）-（ i + j );
+	return f;
+}
+
+WHAT IS THE RISC V COMPLIED CODE?
+
+g  -----→ x10
+h  -----→ x11
+i  -----→ x12
+j  -----→ x13
+
+f  -----→ x20
+
+Registers to hold intermediate results 
+
+x5: g + h
+x6: i + j
+
+leaf example:   #spill x5, x6, x20
+		   addi sp, sp, -12 
+		   sw X5, 8(sp)
+		   sw X6, 4(sp)
+		   sw x20, 0(sp)
+		#arithmetic
+		  add x5, x10, x11
+		  add x6, x12, x13
+		  sub x20, x5, x6 
+	        #return f (x20)
+		  addi x10, x20, 0
+ 	       #restored spilled data
+		  lw x20, 0(sp)
+                  lw x6, 4(sp)
+		  lw x5, 8(sp)
+                  addi sp, sp, 12 
+	       #return control 
+		  jalr xo, 0(x1) 
 
 
+# • Old values of registers x5, x6, and x20 were spilled in memory and restored
+# • Sometimes values are never used and thus they must be categorized as "temporary" values and should not be restored
+# • Temporary Registers: x5 - x7, x28 - x31
+# • Saved Registers: x8 - x9, x18 - x27
 
+# → Temporary register contents thus not need to be spilled into memory
+# → In previous example, two sw and two lw instructions could be avoided (for x5 and x6)
 
 
 
