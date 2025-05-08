@@ -1135,38 +1135,301 @@ loop:
 ############################################################
 
 
-Jump-and-Link Instruction 
+# Jump-and-Link Instruction 
 
 jal rd, function_name   <-------- Function name is just a label,indicating a memory address
 
-° jump and link (JAL) for procedure call
-	° GO to the label (where the procedure/function starts)
-	° And save the address of the following instruction (PC+4) in rd 
+# ° jump and link (JAL) for procedure call
+#	° GO to the label (where the procedure/function starts)
+#	° And save the address of the following instruction (PC+4) in rd 
 
-° rd can be any register 
-	° Save return address in x1(or ra) for function calls
+# ° rd can be any register 
+#	° Save return address in x1(or ra) for function calls
 
-° J is a pseudoinstruction for jupm
-	° It is a JAL instruction that writes to x0
-	° There is no separate jump instruction in RISC V
+# ° J is a pseudoinstruction for jupm
+#	° It is a JAL instruction that writes to x0
+#	° There is no separate jump instruction in RISC V
 
-° Now the return address is in a register, e.g., ra or x1. How actually go there? 
-	° JAL does not take a sourse register
+# ° Now the return address is in a register, e.g., ra or x1. How actually go there? 
+#	° JAL does not take a sourse register
 
-° We need another insruction that can jump to the address in a register "JALR" (to comeback from the function execution )
+# ° We need another insruction that can jump to the address in a register "JALR" (to comeback from the function execution )
 
 
-° To return from the function 
-
+# ° To return from the function 
+ 
 jalr rd, offset(rs1)
 jalr x0, 0(x1)
 
-° Procedure call or return: jump and link to address in a register 
-	° Go to the address computed as Reg[rs1] + offset 
-	° Saves the address of the following insruction (PC + 4) in rd 
+# ° Procedure call or return: jump and link to address in a register 
+#	° Go to the address computed as Reg[rs1] + offset 
+#	° Saves the address of the following insruction (PC + 4) in rd 
 
-° The return address is saved in rd
-	° If the ruturn address is not needed, use x0 ad rd
+# ° The return address is saved in rd
+#	° If the ruturn address is not needed, use x0 ad rd
+
+
+
+#----------------------------------------------------------------------------------------------------
+
+# QUICK FUNCTIONS OVERVIEW WITH EXAMPLE
+
+# EXAMPLE
+
+main: jal, ra,foo.  # main is the lebal,it corresponds address of the insruction 
+
+
+############################################################
+# RISC-V Function Call Example                             #
+# -------------------------------------------------------- #
+# main:                                                    #
+#   jal ra, foo        # 1. Jump to foo, save return addr in ra (x1)
+#   add s0, s0, a0     # 4. Continue after foo returns: use result
+#                                                          #
+# foo:                                                     #
+#   add t1, a0, x0     # 2. Use function argument a0       #
+#   ...                #    Do some work (e.g., xor, etc.) #
+#   xor t0, t2, t3                                          #
+#   ...                                                    #
+#   jalr x0, 0(x1)     # 3. Return to caller using ra      #
+#                      #    jalr sets PC = x1 (return addr)#
+############################################################
+
+# So, in short:
+# main calls foo, gets a result in a0, and adds that result to s0. 
+# This is a classic function call pattern in RISC-V:
+
+
+
+#----------------------------------------------------------------------------------------------------
+
+TRANSLATING C FUNCTION INTO RISCV V CODE 
+
+############################################################
+# C CODE                                 #
+# int abs(int n) {                                         #
+#     int rv = n;                                          #
+#     if (n < 0) rv = -n;                                  #
+#     return rv;                                           #
+# }                                                        #
+############################################################
+
+HOW DOES THE FUNCTION GET THE ARGUMENT? 
+HOW DOES THE FUNCTION PASS THE REURN VALUE TO THE CALLER?
+
+# ° First eight parameters/arguments are passed to the function in x10, x11, X12, x13, X14, X15, x16, x17 (RISC-V) 
+#							or
+#                               	ao, al, a2, а3, a4, а5, аб, a7 (RARS)
+# °﻿﻿Two values can be returned in x10 (a0) and x11 (a1)
+#      °﻿﻿If only one value is returned, it is in x10 (a0)
+
+
+# Caller and callee communicate through these registers only
+	# Not through registers like s1, s2 (saved registers x9, x18, ...)
+
+For example, a function cannot assume s1 has an address it needs
+
+
+############################################################
+# RISC-V Implementation of:                                #
+# int abs(int n) {                                         #
+#     int rv = n;                                          #
+#     if (n < 0) rv = -n;                                  #
+#     return rv;                                           #
+# }                                                        #
+############################################################
+
+abs:                          # Function label (entry point)
+    bge   a0, x0, exit        # If a0 >= 0 (n >= 0), skip negation
+    sub   a0, x0, a0          # Else, a0 = 0 - a0 = -n
+exit:
+    jalr  x0, 0(ra)           # Return to caller using return address in ra
+
+# NOTE:
+# - Input:  a0 holds `n` (argument)
+# - Output: a0 holds return value (same register)
+# - Only 3 instructions total!
+
+############################################################
+# CALLER EXAMPLE: (calling abs(-2))                        #
+# This code is outside the function, sets up input & calls #
+############################################################
+    addi  a0, x0, -2          # Set a0 = -2 (pass -2 as argument)
+    jal   ra, abs             # Call abs function (return address in ra)
+
+# After return:
+# - a0 will hold the result of abs(-2), which is 2
+# - You can now use a0 in main or store it
+############################################################
+
+
+
+#----------------------------------------------------------------------------------------------------
+
+
+# HOW LARGE NUMBER OF VARIABLES IN A FUNCTION ARE HANDLED
+
+#	WHAT IF A PROCEDURE NEEDS MORE VARIABLES? 
+#	HOW DO WE PROCESS MORE ARGUMENTS OR VARIABLES? 
+
+# We can spill the register contents in memory 
+# Store original conttent to memory use this register then load back content into register 
+
+
+#----------------------------------------------------------------------------------------------------
+
+# USING STACK TO MENAGE SPILLED CONTENTS 
+
+# WE CAN SPILL THE REGISTER CONTENTS IN MEMORY
+# DATA STUCTURE USED TO ORGANIZE THE SPILLED DATA IS "STACKS"
+
+# ° Stack needs pointer to point to the top of stack
+# ° In RISC V, stack pointer is register x2, aslo known as sp
+
+# ° Operations:
+#	° PUSH
+#	° POP
+
+# Grows from higher address to lower address
+
+#   MEMORY 
+# |-------|
+# |	  | 
+# |	  |
+# ||||||||| ----> sp	  |
+# |   |   |
+# |   |	  | 
+# |   v   | 
+# |-------|
+
+
+#   MEMORY  PUSHING ELEMENTS 
+#   push x20
+
+
+# - - - - - - - - - - - - EXAMPLE - - - - - - - - - - - - 
+
+# Push x20 onto the stack
+
+addi sp, sp, -4    # Move the stack pointer down by 4 bytes (32 bits) to make space
+sw x20, 0(sp)      # Store the value of x20 into the memory at the new top of the stack
+
+
+# |-------|
+# |	  | 
+# |	  |
+# |	  |
+# |	  |
+# |||x20|||
+# ||||||||| ----> sp	  
+# |   |   |
+# |   |	  | 
+# |   v   | 
+# |-------|
+
+# Why 4 bytes?
+
+# Each word in RISC-V is 4 bytes (since it’s a 32-bit architecture). 
+# So to “push” one word onto the stack, you need to make space for 4 bytes. 
+# Subtracting 4 from sp moves it down the stack by 4 memory addresses (i.e., one word of space).
+
+# So it’s not shifting the contents by 4 bytes — it’s moving the stack pointer down by 4 bytes 
+# to reserve space for storing one word.
+
+
+# sw x20, 0(sp)          # Store the word in x20 at the address (sp + 0)
+                         # The '0' is an offset — here it's 0 because sp already points to the desired location
+                         # You could use another number (e.g., 4(sp), 8(sp)) to access deeper stack positions
+
+
+
+# - - - - - - - - - - - - EXAMPLE - - - - - - - - - - - - 
+
+# POP x20
+
+lw x20, 0(sp)
+addi sp, sp, 4
+
+
+#----------------------------------------------------------------------------------------------------
+
+
+# PUSH AND POP OPERATIONS TO MOVE CONTENTS TO ---> STACK OR FORM <------ STACK 
+
+
+# WRITE RISC V INSTRUCTIONS FOR THE FOLLOWING OPERATIONS 
+
+# ° push ra(x1) onto the stack 
+
+addi sp, sp, -4  # ---another-version-----> addi x2, x3, -4
+sw ra, 0(sp)     # ---another-version-----> sw x1, 0(x2)
+
+# ° pop ra(x1) from the stack 
+
+lw ra, 0(sp)    # ---another-version-----> lw x1, 0(x2)
+addi sp, sp, 4  # ---another-version-----> addi x2, x2, 4
+
+
+
+# - - - - - - - - - - - - EXAMPLE - - - - - - - - - - - - 
+
+
+# WRITE RISC V INSTRUCTIONS TO PUSH S1, S2, S3 ONTO THE STACK
+
+# Instead of 3 ADDIs, we can adjust sp once for three words 
+
+# reserce space for 3 words
+
+addi sp, sp, -12
+sw s1, 8(sp)
+sw s1, 4(sp)
+sw s1, 0(sp)
+
+ # Address     | Value
+ # ---------------------------------------------
+ # 0x7FFF901C  | 
+ # ---------------------------------------------
+ # 0x7FFF9018  | 				  <------ sp before pushing space
+ # ---------------------------------------------
+ # 0x7FFF9014  | 
+ # ---------------------------------------------
+ # 0x7FFF9010  | s1    (variable s1 stored here)
+ # ---------------------------------------------
+ # 0x7FFF900C  | s2    (variable s2 stored here)
+ # ---------------------------------------------
+ # 0x7FFF9008  | s3    (variable s3 stored here) <------ sp after pushing space
+ # ---------------------------------------------
+ # 0x7FFF9004  | 
+ # ----------------------------------------------
+ # 0x7FFF9000  |
+
+
+# ° POP  s1, s2, s3
+
+lw s1, 8(sp)
+lw s2, 4(sp)
+lw s3, 0(sp)
+
+addi sp, sp, 12 # restore sp after loads
+
+Another way doing this
+# ° POP  s1, s2, s3
+
+lw s1, 8(sp)
+addi sp, sp, 4
+lw s2, 4(sp)
+addi sp, sp, 4
+lw s3, 0(sp)
+addi sp, sp, 4
+
+
+
+#----------------------------------------------------------------------------------------------------
+
+# SPLLING DATA INTO MEMORY - ACTIVITY
+
+# C CODE
+
 
 
 
