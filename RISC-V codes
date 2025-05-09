@@ -1480,15 +1480,361 @@ leaf example:   #spill x5, x6, x20
 # → In previous example, two sw and two lw instructions could be avoided (for x5 and x6)
 
 
+#----------------------------------------------------------------------------------------------------
+
+# ° Procedures that do not call other procedures are called LEAF PROCEDURES 
+
+# ° RECURSIVE PROCUDURES INVOKE CLONES OF THEMSELVES 
+
+
+Nested Runctions/Procedures 
+
+# C CODE 
+
+int fact (int n)
+     {
+       if (n < 1) return (1);
+       else return (n * fact(n - 1));
+
+fact(3)
+
+int fact (int n)
+     {
+       if (n < 1) return (1);				<----- n = 3
+       else return (n * fact(n - 1)); 
+}
+
+
+int fact (int fact (int n)
+     {
+       if (n < 1) return (1);				<----- n = 2
+       else return (n * fact(n - 1)); 
+}
+
+
+int n)
+     {
+       if (n < 1) return (1);				<----- n = 1
+       else return (n * fact(n - 1)); 
+}
+
+
+int fact (int n)
+     {
+       if (n < 1) return (1);				<----- n = 0
+       else return (n * fact(n - 1)); 
+}
+
+
+CONSIDER THAT:
+
+return address is stored in x1
+the first argument is stored in x10
+the returned value is stored in x10 (overwrite the passed argument value)
+
+# RISC V IMPLEMENTATION OF THIS FUNCTION 
+
+fact:
+	# if (n < 1) return 1
+	addi t0, zero, 1
+	bge a0, t0, else	# go to else branch if n >= 1
+
+	# if branch 
+	addi a0, zero, 1	# set return value 1
+	beq x0, x0, exit	# go to exit
+
+else: # else n * fact(n - 1)
+	addi a0, a0, -1		# cumpute fact(n - 1)
+	jal ra, fact
+	mul a0, a0, a0	# n * (n - 1)!
+exit:
+	jarl x0, ra, 0
+
+
+
+#----------------------------------------------------------------------------------------------------
+
+
+
+# RISV V INSTRUCTION FORMAT 
+
+# ° Everything in computer is represented with binary and so the Instructions as well
+#	° Called machine code
+# ° How many bit should we use to encode instructions ? 
+# ° Are we using the same number of bits to encode all instructions ?
+#	° Do all instructuons have the same length ?
+
+
+addi rd, rs1, rs2
+addi rd, rs1, immd
+lw rd, offset(rs1)	#same format for jalr
+sw rs2, offset(rs1)
+beq rs1, rs2, LABEL
+jal rd, Function_name
+
+
+
+Design Principle 4
+
+“Good design demands good compromises” in the context of RISC-V, they mean that the architecture was 
+carefully designed to balance simplicity, flexibility, and performance—not to be the absolute best in 
+any single dimension, but to make smart trade-offs that support a wide range of uses.
+
+Keep formats as similar as possible
+
+             ----------------------------
+INSTRUCTION |		32 bits 	|
+	     ----------------------------
+
+# ° RISC V instructions words
+       ° Encode as 32-bits instructions words
+       ° Small number of formats encoding operation code (opcode), Register numbers 
+
+ ° Regularity!
+
+
+# °  RISC V has six instruction formats
+#	° R, I, S, SB, U, UJ
+
+#----------------------------------------------------------------------------------------------------
+
+# RISC V Instruction Format - R Type
+
+|--------|--------|---------|--------|--------|--------|
+| funct7 |  rs2   |   rs1   | funct3 |   rd   | opcode | 
+|--------|--------|---------|--------|--------|--------|
+| 7 bits | 5 bits | 5 bits  | 3 bits | 5 bits | 7 bits |
+|--------|--------|---------|--------|--------|--------|
+
+
+# Fields:
+#   opcode : 7-bit operation code
+#   rd     : destination register number (5 bits)
+#   rs1    : first source register number (5 bits)
+#   rs2    : second source register number (5 bits)
+#   funct3 : 3-bit function code (additional specification)
+#   funct7 : 7-bit function code (further specification)
+
+
+# - - - - - - - - - - - - EXAMPLE - - - - - - - - - - - - 
+
+
+|--------|--------|---------|--------|--------|--------|
+| funct7 |  rs2   |   rs1   | funct3 |   rd   | opcode | 
+|--------|--------|---------|--------|--------|--------|
+| 7 bits | 5 bits | 5 bits  | 3 bits | 5 bits | 7 bits |
+|--------|--------|---------|--------|--------|--------|
+
+a = b + c
+|
+|    <------ Assembler 
+|			    
+v			    
+add x9, x20, x21
+
+|--------|--------|---------|--------|--------|--------|
+|   0    |   21   |    20   |    0   |    9   |    51  | 	# 51 = 0110011
+|--------|--------|---------|--------|--------|--------|
+
+  			    |
+			    |
+			    |
+			    v
+
+|--------|--------|---------|--------|--------|--------|
+|0000000 | 10101  | 10100   |  000   |  01001 |0110011 | 
+|--------|--------|---------|--------|--------|--------|
+ 
+0000	0001	0101	1010	0000	0100	1011	0011    <------ machine code 
+
+
+			    |
+			    |
+			    v
+
+			015A04b3_16 			<-------- hex format 
+
+
+# ANY INSTRUCTIONS WITH 3 COMPONENTS CAN BE REPRESENTED WITH R-FORMAT 
+
+
+# - - - - - - - - - - - - EXAMPLE - - - - - - - - - - - - 
+
+
+What is the RISC V instruction does this represented? 
+
+The numbers are in decmimal 
+
+|--------|--------|---------|--------|--------|--------|
+| funct7 |  rs2   |   rs1   | funct3 |   rd   | opcode | 
+|--------|--------|---------|--------|--------|--------|
+|   32   |    9   |   10    |    0   |   11   |   51   | 
+|--------|--------|---------|--------|--------|--------|
+
+
+Solution: sub x11, x10, x9
 
 
 
 
+| Instruction   | opcode   | funct3 | funct7
+| ------------- | -------- | ------ | -------
+| add           | 0110011  | 000    | 0000000
+| sub           | 0110011  | 000    | 0100000
+| sll           | 0110011  | 001    | 0000000
+| slt           | 0110011  | 010    | 0000000
+| sltu          | 0110011  | 011    | 0000000
+| xor           | 0110011  | 100    | 0000000
+| srl           | 0110011  | 101    | 0000000
+| sra           | 0110011  | 101    | 0100000
+| or            | 0110011  | 110    | 0000000
+| and           | 0110011  | 111    | 0000000
+
+
+#----------------------------------------------------------------------------------------------------
+
+
+
+# RISC V Instruction Format - I Type
+
+|---------|-----|--------|----|--------|
+|immediate| rs1 | funct3 | rd | opcode |
+|---------|-----|--------|----|--------|
+| 12 bits |  5  |   3    |  5 | 7 bits |
+|---------|-----|--------|----|--------|
+
+
+° Immediate arithmetic and load instructions
+	° rs1. source or base address register number 
+	° immediate : constant, or offset added to base address
+		° 2s-comlement, sign extended
+
+° Since only 12 bits are kept in machine code, 
+    the immediate must be in [-2^11, +2^11-11 or [-2048, 2047]
+
+
+# - - - - - - - - - - - - EXAMPLE - - - - - - - - - - - - 
+
+addi x1, x2, 32 
+
+|---------------|-------|-----|-------|--------|
+|0000 0010 0000 | 00010 | 000 | 00001 | 0010011|
+|---------------|-------|-----|-------|--------|
+
+When executing the instruction, processor builds a 32-bit immediate imm by extending the sign bit
+
+    |---imm[31:12]--------|---imm[11:0]----|	
+imm |0000 0000 0000 00000 | 0000 00010 0000|
+    |---------------------|----------------|
 
 
 
 
+| ------------- | -------- | -------|
+| Instruction   | opcode   | funct3 
+| ------------- | -------- | -------|
+| addi          | 0010011  | 000    
+| slli          | 0010011  | 001
+| slti          | 0010011  | 010
+| sltiu         | 0010011  | 011
+| xori          | 0010011  | 100
+| srli          | 0010011  | 101
+| srai          | 0010011  | 101
+| ori           | 0010011  | 110
+| andi          | 0010011  | 111
+| ------------- | -------- | -------|
 
+# In sili, srli, and srai, only lower 5 bits of the immediate are used for shift amount. 
+#   5 bits are enough for 32-bit registers!
+
+
+
+#----------------------------------------------------------------------------------------------------
+
+# RISC V Instruction Format - I Type (srli and srai)
+
+| ------------- | -------- | -------|
+| Instruction   | opcode   | funct3 
+| ------------- | -------- | -------|
+| addi          | 0010011  | 000    
+| slli          | 0010011  | 001
+| slti          | 0010011  | 010
+| sltiu         | 0010011  | 011
+| xori          | 0010011  | 100
+| srli          | 0010011  | 101	<--------- same 
+| srai          | 0010011  | 101	<--------- same 
+| ori           | 0010011  | 110
+| andi          | 0010011  | 111
+| ------------- | -------- | -------|
+
+
+
+# - - - - - - - - - - - - EXAMPLE - - - - - - - - - - - - 
+
+|-------|---------|-----|--------|----|--------|
+| funct7|immediate| rs1 | funct3 | rd | opcode |
+|-------|---------|-----|--------|----|--------|
+| 7bits | 12 bits |  5  |   3    |  5 | 7 bits |
+|-------|---------|-----|--------|----|--------|
+
+srli x1, x2, 16
+
+# More than 31 times shift is not needed(it gets 0), 
+#	therefore the maximum immediate value, i.e. 31, can be represented in 5 bits.
+
+# Remaining 7 bits can be repurposed as an additional funct7 field
+
+
+srli x1, x2, 16
+|---------------------------------------------------|
+|0*0*00 000 | 1 0000 | 0010 | 101 | 00001 | 0010011 | 
+|---------------------------------------------------|
+
+srai x1, x2, 16
+|---------------------------------------------------|
+|0*1*00 000 | 1 0000 | 0010 | 101 | 00001 | 0010011 | 
+|---------------------------------------------------|
+
+				---------
+srli	0010011		101	| 00000 |   <------ funct7
+srli	0010011		101	| 00000 |   <------ funct7
+				---------
+
+#----------------------------------------------------------------------------------------------------
+
+
+
+# RISC V Instruction Format - I Type (load variants)
+
+lw x1, 32(x2)
+
+|-----------------------------------------------|
+|0000 0010 0000 | 00010 | 010 | 00001 | 000 011 |
+|-----------------------------------------------|
+
+/**************************************************************
+ * RISC-V Load Instruction Encoding Table                      *
+ *                                                            *
+ * This table shows how different load operations are encoded *
+ * in the RISC-V instruction set.                             *
+ *                                                            *
+ * +------+-----------+--------+------------------------------+
+ * | type | opcode    | funct3 | Description                  |
+ * +------+-----------+--------+------------------------------+
+ * | lb   | 0000011   | 000    | load byte (signed)           |
+ * | lh   | 0000011   | 001    | load halfword (signed)       |
+ * | lw   | 0000011   | 010    | load word (signed)           |
+ * | ld   | 0000011   | 011    | load doubleword (RV64 only)  |
+ * | lbu  | 0000011   | 100    | load byte unsigned           |
+ * | lhu  | 0000011   | 101    | load halfword unsigned       |
+ * | lwu  | 0000011   | 110    | load word unsigned (RV64)    |
+ * +------+-----------+--------+------------------------------+
+ *                                                            *
+ * Notes:                                                     *
+ * - All load instructions share the same opcode (0000011)    *
+ * - funct3 field differentiates between operation types      *
+ * - lw entry appears to have a typo (extra ^ character)      *
+ **************************************************************/
 
 
 
