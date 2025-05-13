@@ -1837,6 +1837,199 @@ lw x1, 32(x2)
  **************************************************************/
 
 
+#----------------------------------------------------------------------------------------------------
+
+ # RISC V Instruction Format - S Type
+ # Store instruvtions have their own format
+ # sw - sb - sh - 
+
+# S-FORMAT 
+
+|---------|---------|--------|--------|----------|--------|
+|imm[11:5]|   rs2   |   rs1  | funct3 | imm[4:0] | opcode |
+|---------|---------|--------|--------|----------|--------|
+| 7 bits  | 5 bits  | 5 bits | 3 bits | 5 bits   | 7 bits |
+|---------|---------|--------|--------|----------|--------|
+
+
+# ° DIFFERENT IMMEDIATE RORMAT FOR STORE INSTRUCTIONS 
+#	° rs1: base Register, Base address of store 
+#	° rs2: source register, data to be stored in memory 
+#	° immediate: offset added to base address 
+#		° Split so that rs1 and r2 fields always remain in the same place 
+
+
+
+# sw x1, 32(x2)   # The 12 bits of the immediate are saved in two fields 
+
+        sw x1, 32(x2)
+
+|   imm[11:5]   |  x1  	|  x2	|     | imm[4:0]| sw oppcd|
+|---------------|-------|-------|-----|---------|---------|
+|    0000 001   | 00001 | 00010 | 010 |  00000  | 0100011 |
+|-----------------------------------------------|---------|
+
+
+
+# EXAMPLE
+
+|---------|---------|--------|--------|----------|--------|
+|imm[11:5]|   rs2   |   rs1  | funct3 | imm[4:0] | opcode |
+|---------|---------|--------|--------|----------|--------|
+| 0000001 |  00010  | 00010  |   010  |  00100   |0100011 |
+|---------|---------|--------|--------|----------|--------|
+|   |		|	|	 |	   |	     |
+|   |		V	v	 v	   |	     |
+    |         source   base    store 	   |	     |
+    |	       x14	x2	word	   |	     v
+    v					 |       S TYPE
+|-----------|----------|	<-------|	 opcode 
+| imm[11:5] | imm[4:0] |
+|-----------|----------|
+|  0000001  | 00100    |
+|-----------|----------|
+      |          |
+      v          v
+
+	"offset"
+
+
+#----------------------------------------Activity-------------------------------------------
+
+# A[30] = h + A[30] + 1
+# x10 → base address of A
+# x21 → h
+# x9  → temporary for A[30]
+
+#----------------------------------------RISC-V-------------------------------------------
+
+lw   x9, 120(x10)     # Load word from memory: A[30] = Mem[x10 + 120] → x9
+add  x9, x21, x9      # Add h (x21) and A[30] (x9): x9 = x21 + x9
+addi x9, x9, 1        # Add 1 to the result: x9 = x9 + 1
+sw   x9, 120(x10)     # Store updated value back to A[30]: Mem[x10 + 120] = x9 
+
+#----------------------------------------Machine-Code-------------------------------------------
+
+# Instruction 1: Load A[30] into x9
+lw   x9, 120(x10)         # Load word from address x10 + 120 into x9 (i.e., A[30]) # You access memory by byte address, not element index. If A is an array of 32-bit integers, each element takes 4 bytes. A[30] is at byte offset = 30 × 4 = 120
+So:
+# Machine Code: 000001111000 01010 010 01001 0000011
+#               imm[11:0]=000001111000, rs1=01010(x10), funct3=010, rd=01001(x9), opcode=0000011
+		|---------|-----|--------|----|--------|
+		|immediate| rs1 | funct3 | rd | opcode |
+   		|---------|-----|--------|----|--------|			
+		| 12 bits |  5  |   3    |  5 | 7 bits |
+		|---------|-----|--------|----|--------|	
+
+# Instruction 2: Add h to A[30]
+add  x9, x21, x9          # x9 = x21 + x9 (i.e., h + A[30])
+# Machine Code: 0000000 01001 10101 000 01001 0110011
+#               funct7=0000000, rs2=01001(x9), rs1=10101(x21), funct3=000, rd=01001(x9), opcode=0110011
+		|--------|--------|---------|--------|--------|--------|
+		| funct7 |  rs2   |   rs1   | funct3 |   rd   | opcode | 
+		|--------|--------|---------|--------|--------|--------|
+		| 7 bits | 5 bits | 5 bits  | 3 bits | 5 bits | 7 bits |	
+		|--------|--------|---------|--------|--------|--------|
+
+
+# Instruction 3: Add 1 to the result
+addi x9, x9, 1            # x9 = x9 + 1
+# Machine Code: 000000000001 01001 000 01001 0010011
+#               imm=000000000001, rs1=01001(x9), funct3=000, rd=01001(x9), opcode=0010011
+
+		|---------|-----|--------|----|--------|
+		|immediate| rs1 | funct3 | rd | opcode |
+   		|---------|-----|--------|----|--------|			
+		| 12 bits |  5  |   3    |  5 | 7 bits |
+		|---------|-----|--------|----|--------|
+
+
+# Instruction 4: Store result back to A[30]
+sw   x9, 120(x10)         # Store word from x9 into address x10 + 120
+# Machine Code: 0000011 01001 01010 010 11000 0100011
+#               imm[11:5]=0000011, rs2=01001(x9), rs1=01010(x10), funct3=010, imm[4:0]=11000, opcode=0100011
+
+		|---------------|-------|-------|-----|---------|---------|
+		|   imm[11:5]   |  rs2  |  rs1	|  f3 | imm[4:0]| sw oppcd|
+		|---------------|-------|-------|-----|---------|---------|
+		|    	7       |   5   |   5   |  3  |    5    |    7    |
+		|---------------|-------|-------|-----|---------|---------|
+
+ # Instruction 4: Store result back to A[30]
+
+|---------|---------|--------|--------|----------|--------|
+|imm[11:5]|   rs2   |   rs1  | funct3 | imm[4:0] | opcode |
+|---------|---------|--------|--------|----------|--------|
+| 0000011 |  01001  | 01010  |   010  |  11000   |0100011 |
+|---------|---------|--------|--------|----------|--------|
+|   |		|	|	 |	   |	     |
+|   |		V	v	 v	   |	     |
+    |         source   base    store 	   |	     |
+    |	       x14	x2	word	   |	     v
+    v					 |       S TYPE
+|-----------|----------|	<-------|	 opcode 
+| imm[11:5] | imm[4:0] |
+|-----------|----------|
+|  0000011  | 11000    |	
+|-----------|----------|
+      |          |
+      v          v
+
+	"offset"
+
+
+
+#----------------------------------------IMPORTANT-INFORMATION-------------------------------------------
+
+
+# RISC-V Register Table with 5-bit Binary Codes
+# ---------------------------------------------
+# Reg  ABI   Binary   |   Reg  ABI   Binary
+# ---- ------ ------- |   ---- ------ -------
+# x0   zero   00000   |   x16  a6     10000
+# x1   ra     00001   |   x17  a7     10001
+# x2   sp     00010   |   x18  s2     10010
+# x3   gp     00011   |   x19  s3     10011
+# x4   tp     00100   |   x20  s4     10100
+# x5   t0     00101   |   x21  s5     10101
+# x6   t1     00110   |   x22  s6     10110
+# x7   t2     00111   |   x23  s7     10111
+# x8   s0/fp  01000   |   x24  s8     11000
+# x9   s1     01001   |   x25  s9     11001
+# x10  a0     01010   |   x26  s10    11010
+# x11  a1     01011   |   x27  s11    11011
+# x12  a2     01100   |   x28  t3     11100
+# x13  a3     01101   |   x29  t4     11101
+# x14  a4     01110   |   x30  t5     11110
+# x15  a5     01111   |   x31  t6     11111
+
+#----------------------------------------IMPORTANT-INFORMATION-------------------------------------------
+
+
+#----------------------------------------------U-TYPE---------------------------------------------------
+
+ # ° RECALL LOAD 32-bit 0X003D0500 into register x19
+ # 	° LUI set the higher 20 bits (adjusted for sign bit from thw lowern 12 bits)
+ #	° ADDI set the lower 12 bits
+ #		° Immediate is sign extended 
+
+# ° FIELDS in U-TYPE
+# 	° opcode: operation code
+#	° rd    : destination register number 
+#	° imm[31:12]: Those upper 20 bits go into imm[31:12] of the LUI instruction. They are left-shifted by 12 bits, meaning they fill in the upper part of the register, and lower 12 bits are zeros.
+		
+
+# ° OPCODE:
+#  LUI: ob_011_0111# ° RECALL LOAD 32-bit 0X003D0500 into register x19
+
+
+
+#--------------------------------EXAMPLE------------------------------------------
+
+lui x1, 0xABCDE    # the 32-bit immediate is 0xABCDE000
+
+
+
 
 
 
