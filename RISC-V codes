@@ -237,7 +237,7 @@ lw x30, 0(x31)         # x30 = B[g]
 
 # 1. Calculate address of A[i]
 slli x12, x28, 3       # x12 = i * 8 (since elements are 8 bytes)     So, slli x30, x28, 3 means:
-#																		   Take i (from x28), multiply it by 8, and store the result in x30.
+
 add x12, x10, x12      # x12 = address of A[i]
 
 # Load A[i] into register x13
